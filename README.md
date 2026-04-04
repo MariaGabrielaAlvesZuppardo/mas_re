@@ -1,3 +1,12 @@
+
+<img width="6358" height="1896" alt="image" src="https://github.com/user-attachments/assets/a7856e56-e60c-4f7c-b155-e85703d4f41b" />
+
+Programa de Pós Graduação em Engenharia de Software CIN - UFPE 
+
+Aluna : Maria Gabriela Alves Zuppardo 
+
+Orientador : Vinicius Cardoso Garcia
+
 # Pipeline Multi-Agente para Engenharia de Requisitos
 
 Proposta de avaliação empírica de um sistema multi-agente baseado em LLMs para execução integrada de elicitação, classificação e priorização de requisitos de software, com protocolo automatizado e replicado.
@@ -53,7 +62,6 @@ mas_re/
 │   ├── architecture/          # Diagramas de arquitetura MAS
 │   └── protocols/             # Protocolos de handoff documentados
 │
-├── .env.example
 └── requirements.txt
 ```
 
