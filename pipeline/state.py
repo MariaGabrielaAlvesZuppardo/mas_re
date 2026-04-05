@@ -1,6 +1,12 @@
-from typing import TypedDict, List
+from typing import TypedDict, List , Annotated
 from pydantic import BaseModel
+from enum import Enum
+import operator
 
+
+class CategoryEnum(str,Enum):
+    FR="FR"
+    NFR="NFR"
 
 class Requirement(BaseModel):
     id: str
@@ -9,21 +15,21 @@ class Requirement(BaseModel):
 
 
 class ClassifiedRequirement(Requirement):
-    category: str          # FR ou NFR
-    subcategory: str = ""  # ex: Performance, Security, Usability
+    category: CategoryEnum
+    subcategory: str = ""
     confidence: float = 0.0
 
 
 class PrioritizedRequirement(ClassifiedRequirement):
     priority_score: float = 0.0
     priority_rank: int = 0
-    method: str = ""       # ex: MoSCoW, AHP
+    method: str = ""
 
 
 class PipelineState(TypedDict):
     raw_input: str
-    requirements: List[Requirement]
-    classified_requirements: List[ClassifiedRequirement]
-    prioritized_requirements: List[PrioritizedRequirement]
-    errors: List[str]
+    requirements: Annotated[List[Requirement], operator.add]
+    classified_requirements: Annotated[List[ClassifiedRequirement],operator.add]
+    prioritized_requirements: Annotated[List[PrioritizedRequirement], operator.add]
+    errors: Annotated[List[str],operator.add]
     metadata: dict
