@@ -9,7 +9,7 @@ from pipeline.state import (
     CategoryEnum,
 )
 
-# ── Paths do dataset ───────────────────────────────────────────────────────────
+
 _ROOT       = Path(__file__).parent.parent
 _ARFF_PATH  = _ROOT / "datasets" / "promise_nfr" / "Promise+.arff"
 _SCHEMA     = _ROOT / "datasets" / "schemas" / "promise.yml"
@@ -59,6 +59,32 @@ def req_nfr_scalability(promise_data):
 def req_nfr_usability(promise_data):
     item = _find(promise_data.items, raw_label="US")
     return _to_requirement(item, idx=5)
+
+@pytest.fixture
+def item_fr(promise_data):
+    return _find(promise_data.items, raw_label="F")
+
+@pytest.fixture
+def item_nfr_performance(promise_data):
+    return _find(promise_data.items, raw_label="PE")
+
+@pytest.fixture
+def item_nfr_security(promise_data):
+    return _find(promise_data.items, raw_label="SE")
+
+@pytest.fixture
+def item_nfr_scalability(promise_data):
+    return _find(promise_data.items, raw_label="SC")
+
+@pytest.fixture
+def item_nfr_usability(promise_data):
+    return _find(promise_data.items, raw_label="US")
+
+@pytest.fixture
+def promise_sample(promise_data):
+    """Amostra de 10 items do PROMISE+ com seed fixo para reprodutibilidade."""
+    return promise_data.sample(n=10, random_state=42)
+
 
 @pytest.fixture
 def classified_fr(req_fr):

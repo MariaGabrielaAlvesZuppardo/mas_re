@@ -28,9 +28,18 @@ AVAILABLE_MODELS = {
         "supports_json_mode": False,
         "description": "Qwen 2.5 500M — SLM via HuggingFace para comparação com LLMs",
     },
+
+    "llama-3.3-70b-versatile": {
+        "provider": "groq",
+        "category": "LLM",
+        "context_window": 128_000,
+        "supports_json_mode": True,
+        "description": "Llama 3.3 70B via Groq — gratuito para desenvolvimento",
+    },
+
 }
 
-DEFAULT_MODEL = "claude-sonnet-4-6"
+DEFAULT_MODEL = "llama-3.3-70b-versatile"
 
 # Agrupamentos para experimentos comparativos
 LLM_MODELS = [k for k, v in AVAILABLE_MODELS.items() if v["category"] == "LLM"]
