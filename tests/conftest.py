@@ -1,6 +1,8 @@
 import pytest
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 from datasets.promise import PromiseAdapter
 from pipeline.state import (
     Requirement,
@@ -9,6 +11,7 @@ from pipeline.state import (
     CategoryEnum,
 )
 
+load_dotenv(Path(__file__).parent.parent / ".env")
 
 _ROOT       = Path(__file__).parent.parent
 _ARFF_PATH  = _ROOT / "datasets" / "promise_nfr" / "Promise+.arff"

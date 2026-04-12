@@ -7,8 +7,11 @@ Recebe um Requisito do PipelineState, chama o LLLM via Langchain e retorna um Cl
 from __future__ import annotations
 
 import logging
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
+from groq import RateLimitError
 from langchain_anthropic import ChatAnthropic
 from langchain_groq import ChatGroq
 from pydantic import BaseModel
@@ -52,54 +55,80 @@ def _build_llm(model_id: str, model_info: dict):
 
 class ClassificationAgent:
 
-    def __init__(self, model: str | None = None):
+    def __init__(self, model: str | None = None, max_workers: int = 5):
         model_id   = model or settings.classifier_model
         model_info = AVAILABLE_MODELS.get(model_id, {})
 
         llm = _build_llm(model_id, model_info)
 
-        self._chain = classification_prompt | llm.with_structured_output(
+        self._chain      = classification_prompt | llm.with_structured_output(
             ClassificationOutput
         )
+        self._max_workers = max_workers
 
     def classify(self, requirement: Requirement) -> ClassifiedRequirement:
         """
         Classifica um único requisito.
-
-        Args:
-            requirement: Requisito a ser classificado
-
-        Returns:
-            ClassifiedRequirement com category, subcategory e confidence
+        Retentar automaticamente em caso de RateLimitError (429) com backoff exponencial.
         """
         logger.debug("Classificando: %s", requirement.id)
 
-        output: ClassificationOutput = self._chain.invoke({
-            "requirement": requirement.text,
-        })
+        max_attempts = 5
+        wait = 60  # segundos iniciais de espera
 
-        return ClassifiedRequirement(
-            **requirement.model_dump(),
-            category=output.category,
-            subcategory=output.subcategory,
-            confidence=output.confidence,
-        )
+        for attempt in range(1, max_attempts + 1):
+            try:
+                output: ClassificationOutput = self._chain.invoke({
+                    "requirement": requirement.text,
+                })
+                return ClassifiedRequirement(
+                    **requirement.model_dump(),
+                    category=output.category,
+                    subcategory=output.subcategory,
+                    confidence=output.confidence,
+                )
+            except RateLimitError as exc:
+                if attempt == max_attempts:
+                    raise
+                logger.warning(
+                    "RateLimitError em %s (tentativa %d/%d) — aguardando %ds: %s",
+                    requirement.id, attempt, max_attempts, wait, exc,
+                )
+                time.sleep(wait)
+                wait *= 2  # backoff exponencial: 60s, 120s, 240s, 480s
+
+    def classify_batch(
+        self, requirements: list[Requirement]
+    ) -> tuple[list[ClassifiedRequirement], list[str]]:
+        """
+        Classifica uma lista de requisitos em paralelo.
+        Retorna (classificados, erros) preservando a ordem da lista original.
+        """
+        classified: list[ClassifiedRequirement | None] = [None] * len(requirements)
+        errors: list[str] = []
+
+        with ThreadPoolExecutor(max_workers=self._max_workers) as executor:
+            future_to_idx = {
+                executor.submit(self.classify, req): i
+                for i, req in enumerate(requirements)
+            }
+            for future in as_completed(future_to_idx):
+                idx = future_to_idx[future]
+                try:
+                    classified[idx] = future.result()
+                except Exception as exc:
+                    msg = f"Erro ao classificar {requirements[idx].id}: {exc}"
+                    logger.warning(msg)
+                    errors.append(msg)
+
+        return [r for r in classified if r is not None], errors
 
     def run(self, state: PipelineState) -> dict[str, Any]:
         """
         Nó do grafo LangGraph.
         Classifica todos os requisitos do estado e retorna o delta.
         """
-        classified = []
-        errors     = []
-
-        for req in state["requirements"]:
-            try:
-                classified.append(self.classify(req))
-            except Exception as exc:
-                msg = f"Erro ao classificar {req.id}: {exc}"
-                logger.warning(msg)
-                errors.append(msg)
+        classified, errors = self.classify_batch(state["requirements"])
 
         logger.info(
             "Classificados: %d/%d requisitos",
