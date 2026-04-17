@@ -22,8 +22,8 @@ mas_re/
 │
 ├── pipeline/                  # Pipeline multi-agente (LangGraph)
 │   ├── graph.py               # Definição do grafo LangGraph
-│   ├── state.py               # Estado compartilhado entre agentes
-│   ├── handoff.py             # Protocolos de handoff entre agentes
+│   ├── state.py               # Estado compartilhado entre agents
+│   ├── handoff.py             # Protocolos de handoff entre agents
 │   └── nodes/                 # Nós do grafo
 │
 ├── baseline/                  # Agente único para comparação
